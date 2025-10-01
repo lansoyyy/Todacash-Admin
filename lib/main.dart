@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:project_para_admin/screens/home_screen.dart';
 import 'package:project_para_admin/screens/splashtohome_screen.dart';
 
 import 'firebase_options.dart';
@@ -21,7 +22,7 @@ class MyApp extends StatelessWidget {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Todacash - Admin',
-      home: SplashToHomeScreen(),
+      home: HomeScreen(),
     );
   }
 }
