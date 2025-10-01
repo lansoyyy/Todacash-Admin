@@ -28,7 +28,7 @@ class _MapPageState extends State<MapPage> {
       Completer<GoogleMapController>();
 
   static const CameraPosition _kGooglePlex = CameraPosition(
-    target: LatLng(15.907851, 120.573399),
+    target: LatLng(14.5306, 121.0575),
     zoom: 13,
   );
 
