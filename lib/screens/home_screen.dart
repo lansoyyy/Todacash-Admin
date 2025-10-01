@@ -16,12 +16,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  final tabs = [
-    const DashboardPage(),
-    const MapPage(),
-    const DriversPage(),
-    const DeliveryPage()
-  ];
+  final tabs = [const DashboardPage(), const MapPage(), const DeliveryPage()];
 
   @override
   Widget build(BuildContext context) {
@@ -51,18 +46,11 @@ class _HomeScreenState extends State<HomeScreen> {
               label: 'Map'),
           BottomNavigationBarItem(
               icon: Icon(
-                Icons.book_online,
+                Icons.people_alt_outlined,
                 color: Colors.white,
               ),
               backgroundColor: grey,
-              label: 'Bookings'),
-          BottomNavigationBarItem(
-              icon: Icon(
-                Icons.delivery_dining_outlined,
-                color: Colors.white,
-              ),
-              backgroundColor: grey,
-              label: 'Delivery'),
+              label: 'Drivers'),
         ],
         onTap: (index) {
           setState(() {

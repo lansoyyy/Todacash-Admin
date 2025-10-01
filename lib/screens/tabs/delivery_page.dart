@@ -16,13 +16,6 @@ class _DeliveryPageState extends State<DeliveryPage> {
   String filter = '';
   final messageController = TextEditingController();
 
-  int day = DateTime.now().day;
-  int month = DateTime.now().month;
-  int year = DateTime.now().year;
-
-  DateTime startDate =
-      DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
-
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -85,37 +78,13 @@ class _DeliveryPageState extends State<DeliveryPage> {
                   },
                 ),
               ),
-              IconButton(
-                onPressed: () async {
-                  final DateTime? selectedDate = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime(1900),
-                    lastDate: DateTime(2100),
-                  );
-
-                  if (selectedDate != null) {
-                    setState(() {
-                      // day = selectedDate.day;
-                      // month = selectedDate.month;
-                      // year = selectedDate.year;
-                      startDate = selectedDate;
-                    });
-                  }
-                },
-                icon: const Icon(
-                  Icons.calendar_month,
-                ),
-              ),
             ],
           ),
           const SizedBox(
             height: 20,
           ),
           TextBold(
-              text: 'Deliveries for: ${DateFormat.yMMMMd().format(startDate)}',
-              fontSize: 14,
-              color: Colors.black),
+              text: 'Drivers Management', fontSize: 18, color: Colors.black),
           const SizedBox(
             height: 5,
           ),
@@ -126,7 +95,6 @@ class _DeliveryPageState extends State<DeliveryPage> {
                       isGreaterThanOrEqualTo: toBeginningOfSentenceCase(filter))
                   .where('name',
                       isLessThan: '${toBeginningOfSentenceCase(filter)}z')
-                  // .where('dateTime', isLessThan: date)
                   .snapshots(),
               builder: (BuildContext context,
                   AsyncSnapshot<QuerySnapshot> snapshot) {
@@ -179,16 +147,30 @@ class _DeliveryPageState extends State<DeliveryPage> {
                                   const SizedBox(
                                     height: 5,
                                   ),
+                                  Row(
+                                    children: [
+                                      TextRegular(
+                                          text: 'Status: ',
+                                          fontSize: 11,
+                                          color: Colors.grey),
+                                      TextBold(
+                                          text: data.docs[index]['isActive']
+                                              ? 'Active'
+                                              : 'Inactive',
+                                          fontSize: 11,
+                                          color: data.docs[index]['isActive']
+                                              ? Colors.green
+                                              : Colors.red),
+                                    ],
+                                  ),
+                                  const SizedBox(
+                                    height: 5,
+                                  ),
                                   StreamBuilder<QuerySnapshot>(
                                       stream: FirebaseFirestore.instance
-                                          .collection('Delivery')
+                                          .collection('Bookings')
                                           .where('driverId',
                                               isEqualTo: data.docs[index].id)
-                                          .where('dateTime',
-                                              isGreaterThanOrEqualTo: startDate)
-                                          .where('dateTime',
-                                              isLessThan: startDate
-                                                  .add(const Duration(days: 1)))
                                           .snapshots(),
                                       builder: (BuildContext context,
                                           AsyncSnapshot<QuerySnapshot>
@@ -200,37 +182,27 @@ class _DeliveryPageState extends State<DeliveryPage> {
                                         }
                                         if (snapshot.connectionState ==
                                             ConnectionState.waiting) {
-                                          return const Padding(
-                                            padding: EdgeInsets.only(top: 50),
-                                            child: Center(
-                                                child:
-                                                    CircularProgressIndicator(
-                                              color: Colors.black,
-                                            )),
-                                          );
+                                          return TextRegular(
+                                              text: 'Loading bookings...',
+                                              fontSize: 11,
+                                              color: Colors.grey);
                                         }
 
-                                        final data12 = snapshot.requireData;
+                                        final bookingsData =
+                                            snapshot.requireData;
 
                                         return TextBold(
                                             text:
-                                                '${data12.docs.length} Deliveries',
-                                            fontSize: 12,
-                                            color: Colors.green);
+                                                '${bookingsData.docs.length} Bookings',
+                                            fontSize: 11,
+                                            color: Colors.blue);
                                       }),
                                 ],
                               ),
                               trailing: SizedBox(
-                                width: 60,
+                                width: 100,
                                 child: Row(
                                   children: [
-                                    Icon(
-                                      Icons.circle,
-                                      size: 12,
-                                      color: data.docs[index]['isActive']
-                                          ? Colors.green
-                                          : Colors.red,
-                                    ),
                                     IconButton(
                                       onPressed: () async {
                                         var text =
@@ -241,6 +213,62 @@ class _DeliveryPageState extends State<DeliveryPage> {
                                       },
                                       icon: const Icon(
                                         Icons.phone,
+                                        color: Colors.blue,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return AlertDialog(
+                                              title:
+                                                  const Text('Delete Driver'),
+                                              content: Text(
+                                                  'Are you sure you want to delete ${data.docs[index]['name']}?'),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                  child: const Text('Cancel'),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () async {
+                                                    // Delete the driver from Firestore
+                                                    await FirebaseFirestore
+                                                        .instance
+                                                        .collection('Drivers')
+                                                        .doc(
+                                                            data.docs[index].id)
+                                                        .delete();
+
+                                                    // Show success message
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                            '${data.docs[index]['name']} has been deleted'),
+                                                        backgroundColor:
+                                                            Colors.green,
+                                                      ),
+                                                    );
+
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                  child: const Text('Delete',
+                                                      style: TextStyle(
+                                                          color: Colors.red)),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        );
+                                      },
+                                      icon: const Icon(
+                                        Icons.delete,
+                                        color: Colors.red,
                                       ),
                                     ),
                                   ],
