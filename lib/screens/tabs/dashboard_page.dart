@@ -101,7 +101,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                 legendOptions: const pie.LegendOptions(
                                     legendPosition: pie.LegendPosition.left),
                                 dataMap: {
-                                  'Accepted': rides,
+                                  'Completed': rides,
                                   'Cancelled': cancelled,
                                   'Pending': pendings,
                                 },
@@ -130,7 +130,7 @@ class _DashboardPageState extends State<DashboardPage> {
   getTotalFare() async {
     await FirebaseFirestore.instance
         .collection('Bookings')
-        .where('status', isEqualTo: 'Accepted')
+        .where('status', isEqualTo: 'Picked up')
         .get()
         .then((QuerySnapshot querySnapshot) {
       for (var doc in querySnapshot.docs) {
@@ -171,7 +171,7 @@ class _DashboardPageState extends State<DashboardPage> {
         .then((QuerySnapshot querySnapshot) {
       for (var doc in querySnapshot.docs) {
         print(doc['status']);
-        if (doc['status'] == 'Accepted') {
+        if (doc['status'] == 'Picked up') {
           setState(() {
             rides += 1;
           });
