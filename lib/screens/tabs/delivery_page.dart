@@ -4,17 +4,19 @@ import 'package:project_para_admin/widgets/text_widget.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart' show DateFormat, toBeginningOfSentenceCase;
 import '../../utils/colors.dart';
+import 'driver_details_screen.dart';
 
-class DeliveryPage extends StatefulWidget {
-  const DeliveryPage({super.key});
+class NewDriversPage extends StatefulWidget {
+  const NewDriversPage({super.key});
 
   @override
-  State<DeliveryPage> createState() => _DeliveryPageState();
+  State<NewDriversPage> createState() => _NewDriversPageState();
 }
 
-class _DeliveryPageState extends State<DeliveryPage> {
+class _NewDriversPageState extends State<NewDriversPage> {
   String filter = '';
   final messageController = TextEditingController();
+  String verificationFilter = 'all'; // 'all', 'verified', 'unverified'
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +83,21 @@ class _DeliveryPageState extends State<DeliveryPage> {
             ],
           ),
           const SizedBox(
-            height: 20,
+            height: 10,
+          ),
+          // Verification Filter Buttons
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildFilterButton('All', 'all'),
+              const SizedBox(width: 10),
+              _buildFilterButton('Verified', 'verified'),
+              const SizedBox(width: 10),
+              _buildFilterButton('Unverified', 'unverified'),
+            ],
+          ),
+          const SizedBox(
+            height: 10,
           ),
           TextBold(
               text: 'Drivers Management', fontSize: 18, color: Colors.black),
@@ -89,13 +105,7 @@ class _DeliveryPageState extends State<DeliveryPage> {
             height: 5,
           ),
           StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('Drivers')
-                  .where('name',
-                      isGreaterThanOrEqualTo: toBeginningOfSentenceCase(filter))
-                  .where('name',
-                      isLessThan: '${toBeginningOfSentenceCase(filter)}z')
-                  .snapshots(),
+              stream: _getDriversStream(),
               builder: (BuildContext context,
                   AsyncSnapshot<QuerySnapshot> snapshot) {
                 if (snapshot.hasError) {
@@ -114,34 +124,70 @@ class _DeliveryPageState extends State<DeliveryPage> {
 
                 final data = snapshot.requireData;
 
+                // Filter drivers based on verification status
+                List<DocumentSnapshot> filteredDocs = data.docs.where((doc) {
+                  final driverData = doc.data() as Map<String, dynamic>?;
+                  if (driverData == null) return false;
+
+                  final isVerified = driverData['isVerified'] ?? false;
+
+                  if (verificationFilter == 'verified') {
+                    return isVerified;
+                  } else if (verificationFilter == 'unverified') {
+                    return !isVerified;
+                  } else {
+                    return true; // 'all' filter
+                  }
+                }).toList();
+
                 return Expanded(
                   child: SizedBox(
                     child: ListView.builder(
-                      itemCount: data.docs.length,
+                      itemCount: filteredDocs.length,
                       itemBuilder: (context, index) {
+                        final driverData =
+                            filteredDocs[index].data() as Map<String, dynamic>?;
+
+                        // Handle case where driver data might be null
+                        if (driverData == null) {
+                          return const SizedBox.shrink();
+                        }
+
+                        final isVerified = driverData['isVerified'] ?? false;
+
                         return Padding(
                           padding: const EdgeInsets.fromLTRB(20, 5, 20, 5),
                           child: Card(
                             elevation: 3,
                             child: ListTile(
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => DriverDetailsScreen(
+                                      driverData: filteredDocs[index],
+                                      driverId: filteredDocs[index].id,
+                                    ),
+                                  ),
+                                );
+                              },
                               leading: CircleAvatar(
                                 minRadius: 20,
                                 maxRadius: 20,
-                                backgroundImage: NetworkImage(
-                                    data.docs[index]['profilePicture']),
+                                backgroundImage: NetworkImage(driverData[
+                                        'profilePicture'] ??
+                                    'https://cdn-icons-png.flaticon.com/256/149/149071.png'),
                               ),
                               title: TextBold(
-                                  text: data.docs[index]['name'],
+                                  text: driverData['name'] ?? 'Unknown',
                                   fontSize: 15,
                                   color: Colors.black),
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   TextRegular(
-                                      text:
-                                          '${data.docs[index]['vehicle'] ?? ''}'
-                                                  ' - ' +
-                                              data.docs[index]['plateNumber'],
+                                      text: '${driverData['vehicle'] ?? ''}'
+                                              ' - ' +
+                                          (driverData['plateNumber'] ?? ''),
                                       fontSize: 11,
                                       color: Colors.grey),
                                   const SizedBox(
@@ -154,13 +200,32 @@ class _DeliveryPageState extends State<DeliveryPage> {
                                           fontSize: 11,
                                           color: Colors.grey),
                                       TextBold(
-                                          text: data.docs[index]['isActive']
+                                          text: driverData['isActive'] ?? false
                                               ? 'Active'
                                               : 'Inactive',
                                           fontSize: 11,
-                                          color: data.docs[index]['isActive']
+                                          color: driverData['isActive'] ?? false
                                               ? Colors.green
                                               : Colors.red),
+                                    ],
+                                  ),
+                                  const SizedBox(
+                                    height: 5,
+                                  ),
+                                  Row(
+                                    children: [
+                                      TextRegular(
+                                          text: 'Verification: ',
+                                          fontSize: 11,
+                                          color: Colors.grey),
+                                      TextBold(
+                                          text: isVerified
+                                              ? 'Verified'
+                                              : 'Not Verified',
+                                          fontSize: 11,
+                                          color: isVerified
+                                              ? Colors.green
+                                              : Colors.orange),
                                     ],
                                   ),
                                   const SizedBox(
@@ -170,7 +235,7 @@ class _DeliveryPageState extends State<DeliveryPage> {
                                       stream: FirebaseFirestore.instance
                                           .collection('Bookings')
                                           .where('driverId',
-                                              isEqualTo: data.docs[index].id)
+                                              isEqualTo: filteredDocs[index].id)
                                           .snapshots(),
                                       builder: (BuildContext context,
                                           AsyncSnapshot<QuerySnapshot>
@@ -206,7 +271,7 @@ class _DeliveryPageState extends State<DeliveryPage> {
                                     IconButton(
                                       onPressed: () async {
                                         var text =
-                                            'tel:${data.docs[index]['number']}';
+                                            'tel:${driverData['number'] ?? ''}';
                                         if (await canLaunch(text)) {
                                           await launch(text);
                                         }
@@ -225,7 +290,7 @@ class _DeliveryPageState extends State<DeliveryPage> {
                                               title:
                                                   const Text('Delete Driver'),
                                               content: Text(
-                                                  'Are you sure you want to delete ${data.docs[index]['name']}?'),
+                                                  'Are you sure you want to delete ${driverData['name'] ?? 'this driver'}?'),
                                               actions: [
                                                 TextButton(
                                                   onPressed: () {
@@ -239,8 +304,8 @@ class _DeliveryPageState extends State<DeliveryPage> {
                                                     await FirebaseFirestore
                                                         .instance
                                                         .collection('Drivers')
-                                                        .doc(
-                                                            data.docs[index].id)
+                                                        .doc(filteredDocs[index]
+                                                            .id)
                                                         .delete();
 
                                                     // Show success message
@@ -249,7 +314,7 @@ class _DeliveryPageState extends State<DeliveryPage> {
                                                         .showSnackBar(
                                                       SnackBar(
                                                         content: Text(
-                                                            '${data.docs[index]['name']} has been deleted'),
+                                                            '${driverData['name'] ?? 'Driver'} has been deleted'),
                                                         backgroundColor:
                                                             Colors.green,
                                                       ),
@@ -285,5 +350,48 @@ class _DeliveryPageState extends State<DeliveryPage> {
         ],
       ),
     );
+  }
+
+  Widget _buildFilterButton(String label, String value) {
+    final isSelected = verificationFilter == value;
+
+    return ElevatedButton(
+      onPressed: () {
+        setState(() {
+          verificationFilter = value;
+        });
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isSelected ? blue : Colors.white,
+        foregroundColor: isSelected ? Colors.black : grey,
+        side: BorderSide(
+          color: isSelected ? blue : grey,
+          width: 1,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+      child: TextRegular(
+        text: label,
+        fontSize: 12,
+        color: isSelected ? Colors.black : grey,
+      ),
+    );
+  }
+
+  Stream<QuerySnapshot> _getDriversStream() {
+    Query query = FirebaseFirestore.instance.collection('Drivers');
+
+    // Apply name search filter if exists
+    if (filter.isNotEmpty) {
+      query = query
+          .where('name',
+              isGreaterThanOrEqualTo: toBeginningOfSentenceCase(filter))
+          .where('name', isLessThan: '${toBeginningOfSentenceCase(filter)}z');
+    }
+
+    return query.snapshots();
   }
 }

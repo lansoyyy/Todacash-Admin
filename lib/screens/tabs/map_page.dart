@@ -94,6 +94,7 @@ class _MapPageState extends State<MapPage> {
   getAllDrivers() async {
     FirebaseFirestore.instance
         .collection('Drivers')
+        .where('isVerified', isEqualTo: true)
         .get()
         .then((QuerySnapshot querySnapshot) async {
       for (var doc in querySnapshot.docs) {

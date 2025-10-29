@@ -16,7 +16,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  final tabs = [const DashboardPage(), const MapPage(), const DeliveryPage()];
+  final tabs = [const DashboardPage(), const MapPage(), const NewDriversPage()];
 
   @override
   Widget build(BuildContext context) {
