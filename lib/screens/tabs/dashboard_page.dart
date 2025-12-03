@@ -63,7 +63,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       child: Column(
                         children: [
                           TextRegular(
-                              text: 'Number of bookings per week',
+                              text: 'Number of bookings',
                               fontSize: 18,
                               color: Colors.black),
                           const SizedBox(

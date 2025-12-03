@@ -76,6 +76,15 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
           }
 
           final data = snapshot.data!.data() as Map<String, dynamic>;
+          final num totalStars = (data['stars'] ?? 0) as num;
+          final List<dynamic> ratingsList =
+              (data['ratings'] as List<dynamic>?) ?? [];
+          final int ratingsCount = ratingsList.length;
+          final double averageRating =
+              ratingsCount > 0 ? totalStars / ratingsCount : 0.0;
+          final String ratingText = ratingsCount > 0
+              ? '${averageRating.toStringAsFixed(2)}/5'
+              : 'No ratings';
 
           return SingleChildScrollView(
             child: Padding(
@@ -290,11 +299,9 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
 
                   // Performance Information
                   _buildSectionTitle('Performance Information'),
-                  _buildInfoCard('Stars', '${data['stars'] ?? 0}'),
+                  _buildInfoCard('Stars', ratingText),
                   _buildInfoCard(
                       'Total Bookings', '${data['history']?.length ?? 0}'),
-                  _buildInfoCard('Delivery History',
-                      '${data['deliveryHistory']?.length ?? 0}'),
                   const SizedBox(height: 20),
 
                   // Location Information
